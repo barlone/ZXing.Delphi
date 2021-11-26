@@ -1,16 +1,17 @@
 unit ZXing.Common.BitArrayImplementation;
 
 interface
+
 uses ZXing.Common.BitArray;
 
-function NewBitArray:IBitArray; overload;
-function NewBitArray(const Size: Integer):IBitArray; overload;
+function NewBitArray: IBitArray; overload;
+function NewBitArray(const Size: Integer): IBitArray; overload;
 
 implementation
+
 uses
   System.SysUtils,
   ZXing.Common.Detector.MathUtils;
-
 
 type
   /// <summary>
@@ -25,8 +26,7 @@ type
     function GetBit(i: Integer): Boolean;
     procedure SetBit(i: Integer; Value: Boolean);
     function makeArray(Size: Integer): TArray<Integer>;
-    procedure ensureCapacity(size: Integer);
-
+    procedure ensureCapacity(Size: Integer);
 
     function numberOfTrailingZeros(num: Integer): Integer;
     function GetBits: TArray<Integer>;
@@ -47,15 +47,14 @@ type
     function getNextUnset(from: Integer): Integer;
 
     procedure setBulk(i, newBits: Integer);
-   	procedure setRange(start, ending: Integer);
+    procedure setRange(start, ending: Integer);
     procedure appendBit(bit: Boolean);
     procedure Reverse();
     procedure clear();
 
     function isRange(start, ending: Integer;
-      const value: Boolean): Boolean;
+      const Value: Boolean): Boolean;
   end;
-
 
 constructor TBitArrayImplementation.Create;
 begin
@@ -68,20 +67,20 @@ constructor TBitArrayImplementation.Create(const Size: Integer);
 begin
   if (Size < 1)
   then
-     raise EArgumentException.Create('size must be at least 1.');
+    raise EArgumentException.Create('size must be at least 1.');
 
   Fsize := Size;
   Fbits := makeArray(Size);
   InitLookup();
 end;
 
-procedure TBitArrayImplementation.ensureCapacity(size: Integer);
+procedure TBitArrayImplementation.ensureCapacity(Size: Integer);
 var
-  newBits : TArray<Integer>;
+  newBits: TArray<Integer>;
 begin
-  if (size > TMathUtils.Asr(Length(Fbits), 5)) then
+  if (Size > TMathUtils.Asr(Length(Fbits), 5)) then
   begin
-    newBits := makeArray(size);
+    newBits := makeArray(Size);
     Move(Fbits[0], newBits[0], Length(Fbits));
     Fbits := newBits;
   end;
@@ -101,7 +100,7 @@ end;
 
 function TBitArrayImplementation.GetBits: TArray<Integer>;
 begin
-   result := FBits;
+  Result := Fbits;
 end;
 
 /// <summary>
@@ -113,7 +112,8 @@ end;
 function TBitArrayImplementation.getNextSet(from: Integer): Integer;
 var
   bitsOffset,
-  currentBits : Integer;
+    currentBits: Integer;
+  LValue: Integer;
 begin
   if (from >= Fsize) then
   begin
@@ -123,7 +123,9 @@ begin
   bitsOffset := TMathUtils.Asr(from, 5);
   currentBits := Fbits[bitsOffset];
   // mask off lesser bits first
+  {$OVERFLOWCHECKS OFF}
   currentBits := currentBits and (not((1 shl (from and $1F)) - 1));
+  {$OVERFLOWCHECKS ON}
   while (currentBits = 0) do
   begin
     Inc(bitsOffset);
@@ -152,7 +154,7 @@ end;
 function TBitArrayImplementation.getNextUnset(from: Integer): Integer;
 var
   bitsOffset,
-  currentBits: Integer;
+    currentBits: Integer;
 begin
   if (from >= Fsize) then
   begin
@@ -163,7 +165,7 @@ begin
   currentBits := not Fbits[bitsOffset];
 
   // mask off lesser bits first
-  currentBits := currentBits and (not( (1 shl (from and $1F)) - 1));
+  currentBits := currentBits and (not((1 shl (from and $1F)) - 1));
   while (currentBits = 0) do
   begin
     Inc(bitsOffset);
@@ -178,7 +180,7 @@ begin
 
   if (Result > Size)
   then
-     Result := Size;
+    Result := Size;
 end;
 
 procedure TBitArrayImplementation.InitLookup;
@@ -200,12 +202,15 @@ function TBitArrayImplementation.numberOfTrailingZeros(num: Integer): Integer;
 var
   index: Integer;
 begin
-  index := (-num and num) mod 37;
-  if (index < 0) then
-  begin
-    index := index * -1;
-  end;
-  Result := _lookup[index];
+{$OVERFLOWCHECKS OFF}
+    index := ((num * -1) and num) mod 37;
+
+    if (index < 0) then
+    begin
+      index := index * -1;
+    end;
+    Result := _lookup[index];
+{$OVERFLOWCHECKS ON}
 end;
 
 procedure TBitArrayImplementation.Reverse;
@@ -227,7 +232,7 @@ begin
     x := (TMathUtils.Asr(x, 4) and $0F0F0F0F) or ((x and $0F0F0F0F) shl 4);
     x := (TMathUtils.Asr(x, 8) and $00FF00FF) or ((x and $00FF00FF) shl 8);
     x := (TMathUtils.Asr(x, 16) and $0000FFFF) or ((x and $0000FFFF) shl 16);
-    newBits[len - i] := integer(x) ;
+    newBits[len - i] := Integer(x);
   end;
   // now correct the int's if the bit size isn't a multiple of 32
   if (Size <> oldBitsLen * 32) then
@@ -266,7 +271,7 @@ end;
 
 function TBitArrayImplementation.Size: Integer;
 begin
-  result := FSize;
+  Result := Fsize;
 end;
 
 function TBitArrayImplementation.SizeInBytes: Integer;
@@ -298,19 +303,19 @@ end;
 procedure TBitArrayImplementation.setRange(start, ending: Integer);
 var
   firstInt,
-  lastInt,
-  mask,
-  i, j : Integer;
+    lastInt,
+    mask,
+    i, j: Integer;
   firstBit,
-  lastBit : Integer;
+    lastBit: Integer;
 begin
   if (ending < start)
   then
-     raise EArgumentException.Create('Start is greater than end');
+    raise EArgumentException.Create('Start is greater than end');
 
   if (ending = start)
   then
-     exit;
+    exit;
   Dec(ending); // will be easier to treat this as the last actually set bit -- inclusive
   firstInt := TMathUtils.Asr(start, 5);
   lastInt := TMathUtils.Asr(ending, 5);
@@ -318,18 +323,18 @@ begin
   begin
     if (i > firstInt)
     then
-       firstBit := start
+      firstBit := start
     else
-       firstBit := $1F;
+      firstBit := $1F;
     if (i < lastInt)
     then
-       lastBit := 31
+      lastBit := 31
     else
-       lastBit := (ending and $1F);
+      lastBit := (ending and $1F);
 
     if ((firstBit = 0) and (lastBit = 31))
     then
-       mask := -1
+      mask := -1
     else
     begin
       mask := 0;
@@ -338,15 +343,15 @@ begin
         mask := (mask or (1 shl j));
       end;
     end;
-    bits[i] := (bits[i] or mask);
+    Bits[i] := (Bits[i] or mask);
   end;
 end;
 
 /// <summary> Clears all bits (sets to false).</summary>
-procedure TBitArrayImplementation.Clear;
+procedure TBitArrayImplementation.clear;
 var
   max,
-  i: Integer;
+    i: Integer;
 begin
   max := Length(Fbits);
   for i := 0 to Pred(max) do
@@ -368,21 +373,21 @@ end;
 /// </returns>
 /// <throws>  EIllegalArgumentException if end is less than or equal to start </throws>
 function TBitArrayImplementation.isRange(start, ending: Integer;
-  const value: Boolean): Boolean;
+  const Value: Boolean): Boolean;
 var
   firstInt,
-  lastInt,
-  firstBit,
-  lastBit,
-  mask,
-  i, j,
-  temp: Integer;
+    lastInt,
+    firstBit,
+    lastBit,
+    mask,
+    i, j,
+    temp: Integer;
 begin
   if (ending < start) then
   begin
     Result := False; // there is a bug here some how. We just exits with false
-    //exit;
-    //raise EArgumentException.Create('End is greater then start');
+    // exit;
+    // raise EArgumentException.Create('End is greater then start');
   end;
 
   if (ending = start) then
@@ -397,20 +402,20 @@ begin
   for i := firstInt to lastInt do
   begin
     if (i > firstInt)
-  	then
-       firstBit := 0
+    then
+      firstBit := 0
     else
-       firstBit := (start and $1F);
+      firstBit := (start and $1F);
 
     if (i < lastInt)
-	  then
-       lastBit := 31
+    then
+      lastBit := 31
     else
-       lastBit := (ending and $1F);
+      lastBit := (ending and $1F);
 
     if ((firstBit = 0) and (lastBit = 31))
-  	then
-       mask := -1
+    then
+      mask := -1
     else
     begin
       mask := 0;
@@ -421,10 +426,10 @@ begin
     // Return false if we're looking for 1s and the masked bits[i] isn't all 1s (that is,
     // equals the mask, or we're looking for 0s and the masked portion is not all 0s
     if (Value)
-	  then
-       temp := mask
-  	else
-	   temp := 0;
+    then
+      temp := mask
+    else
+      temp := 0;
 
     if ((Fbits[i] and mask) <> (temp)) then
     begin
@@ -448,24 +453,19 @@ begin
   if (bit) then
   begin
     i := TMathUtils.Asr(Fsize, 5);
-    bits[i] := (bits[i] or (Fsize and $1F));
+    Bits[i] := (Bits[i] or (Fsize and $1F));
   end;
   Dec(Fsize);
 end;
 
-
-
-
-function NewBitArray:IBitArray;
+function NewBitArray: IBitArray;
 begin
-   result :=  TBitArrayImplementation.Create;
+  Result := TBitArrayImplementation.Create;
 end;
 
-
-function NewBitArray(const Size: Integer):IBitArray;
+function NewBitArray(const Size: Integer): IBitArray;
 begin
-   result :=  TBitArrayImplementation.Create(size);
+  Result := TBitArrayImplementation.Create(Size);
 end;
-
 
 end.
